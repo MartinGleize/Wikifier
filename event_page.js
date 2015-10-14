@@ -17,13 +17,14 @@ function resolvedWikiUrl(baseUrl, term) {
 
 var WIKIA_SEARCH_PAGE = "Special:Search?search="
 
-function navigateToFinalPage(text, url, doesntExist) {
+function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     // opens a new tab on either the valid wiki page or the search page
+    var newTabPosition = parentTabPosition + 1;
     if (doesntExist) {
         var searchPageUrl = resolvedWikiUrl(url, WIKIA_SEARCH_PAGE + text)
-        chrome.tabs.create({url: searchPageUrl});
+        chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
     } else {
-        chrome.tabs.create({"url": url});
+        chrome.tabs.create({index: newTabPosition, "url": url});
     }
 }
 
@@ -38,28 +39,35 @@ function checkForPageExistence(text, message) {
       console.log("Tentative page was successfully downloaded (" + message.url + ")");
       // look for every notfound-type strings in the source of the page
       var doesntExist = NOT_FOUND_STRINGS.findIndex(function(elt, i, ar) { return message.source.includes(elt); }) >= 0;
-      navigateToFinalPage(text, message.url, doesntExist)
+      navigateToFinalPage(text, message.url, doesntExist, message.tabPosition)
     }
 }
 
 function downloadPage(text, url) {
     // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
     // handle the response: we then check for the existence of this page on the wiki
-    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse){
+    function handleResponse(message, sender, sendResponse) {
+        //TOCHECK: necessary to remove the listener once the message has been fired, otherwise several pages open...
+        chrome.runtime.onMessage.removeListener(handleResponse);
         checkForPageExistence(text, message)
-    });
+    }
+    chrome.runtime.onMessage.addListener(handleResponse);
     // on current tab
     chrome.tabs.query(
         {currentWindow: true, active : true},
         function(tabArray){
             // get current tab id
-            var tabId = tabArray[0].id;
+            var currentTab = tabArray[0];
+            var tabId = currentTab.id;
+            var tabPosition = currentTab.index;
             // check for page existence via content script
             chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
+                console.log("Injecting content_script.js in page " + currentTab.url);
                 // send message containing the url to the content script
                 var message = {
                     "url": url,
-                    "extensionId": chrome.runtime.id
+                    "extensionId": chrome.runtime.id,
+                    "tabPosition": tabPosition
                 }
                 chrome.tabs.sendMessage(tabId, message);
             });

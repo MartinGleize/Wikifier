@@ -1,6 +1,7 @@
-function checkForExistenceInWiki(message) {
+function checkForExistenceInWiki(message, sender, sendResponse) {
 	var url = message.url;
 	var extensionId = message.extensionId;
+	var tabPosition = message.tabPosition;
     // this unfortunately requires cross-origin request permissions
 	// so we inject it in the page as a content script, which by-pass this limitation
 	
@@ -9,7 +10,7 @@ function checkForExistenceInWiki(message) {
         console.log("Downloaded " + url);
 		console.log("Extension ID: " + extensionId);
         // send back to the extension the source of the downloaded page
-		chrome.runtime.sendMessage(extensionId, {"url": url, "source": this.responseText});
+		chrome.runtime.sendMessage(extensionId, {"url": url, "source": this.responseText, "tabPosition": tabPosition});
     }
 
 	// download the tentative page
@@ -19,7 +20,4 @@ function checkForExistenceInWiki(message) {
     oReq.send();
 }
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	// "message" should contain the tentative url
-	checkForExistenceInWiki(message);
-});
+chrome.runtime.onMessage.addListener(checkForExistenceInWiki);
