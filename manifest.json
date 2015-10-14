@@ -1,0 +1,11 @@
+{
+  "name": "Wikifier",
+  "description": "Allows looking up selected words in the currently browsed wiki/wikia",
+  "version": "0.1",
+  "permissions": ["contextMenus"],
+  "background": {
+    "persistent": false,
+    "scripts": ["event_page.js"]
+  },
+  "manifest_version": 2
+}
