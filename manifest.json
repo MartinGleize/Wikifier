@@ -1,11 +1,14 @@
 {
-  "name": "Wikifier",
-  "description": "Allows a quick look up in the currently browsed wiki/wikia",
-  "version": "0.1",
-  "permissions": ["contextMenus"],
-  "background": {
-    "persistent": false,
-    "scripts": ["event_page.js"]
-  },
-  "manifest_version": 2
+	"name": "Wikifier",
+	"description": "Allows a quick look up in the currently browsed wiki/wikia",
+	"version": "0.1",
+	"permissions": [
+		"contextMenus",
+		"activeTab"
+	],
+	"background": {
+		"persistent": false,
+		"scripts": ["event_page.js"]
+	},
+	"manifest_version": 2
 }

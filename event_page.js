@@ -15,8 +15,61 @@ function resolvedWikiUrl(baseUrl, term) {
     return res;
 }
 
-function navigateToTentativeWikiPage(url) {
-    chrome.tabs.create({"url": url});
+var WIKIA_SEARCH_PAGE = "Special:Search?search="
+
+function navigateToFinalPage(text, url, doesntExist) {
+    // opens a new tab on either the valid wiki page or the search page
+    if (doesntExist) {
+        var searchPageUrl = resolvedWikiUrl(url, WIKIA_SEARCH_PAGE + text)
+        chrome.tabs.create({url: searchPageUrl});
+    } else {
+        chrome.tabs.create({"url": url});
+    }
+}
+
+var NOT_FOUND_STRINGS = [
+    "This page needs content.",
+    "does not have an article with this exact name",
+    "no results"
+]
+
+function checkForPageExistence(text, message) {
+    if (message.url && message.source) {
+      console.log("Tentative page was successfully downloaded (" + message.url + ")");
+      // look for every notfound-type strings in the source of the page
+      var doesntExist = NOT_FOUND_STRINGS.findIndex(function(elt, i, ar) { return message.source.includes(elt); }) >= 0;
+      navigateToFinalPage(text, message.url, doesntExist)
+    }
+}
+
+function downloadPage(text, url) {
+    // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
+    // handle the response: we then check for the existence of this page on the wiki
+    chrome.runtime.onMessage.addListener(function(message, sender, sendResponse){
+        checkForPageExistence(text, message)
+    });
+    // on current tab
+    chrome.tabs.query(
+        {currentWindow: true, active : true},
+        function(tabArray){
+            // get current tab id
+            var tabId = tabArray[0].id;
+            // check for page existence via content script
+            chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
+                // send message containing the url to the content script
+                var message = {
+                    "url": url,
+                    "extensionId": chrome.runtime.id
+                }
+                chrome.tabs.sendMessage(tabId, message);
+            });
+        }
+    );
+}
+
+function navigateToTentativeWikiPage(text, url) {
+    // start with checking the page for existence
+    downloadPage(text, url);
 }
 
 // the onClicked callback function:
@@ -33,7 +86,7 @@ function onClickHandler(info, tab) {
         var newUrl = resolvedWikiUrl(url, term);
         console.log("New url: " + newUrl);
         // navigate to tentative wiki page (or search for it)
-        navigateToTentativeWikiPage(newUrl);
+        navigateToTentativeWikiPage(text, newUrl);
 	}
 };
 
