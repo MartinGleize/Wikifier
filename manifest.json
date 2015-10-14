@@ -1,7 +1,7 @@
 {
 	"name": "Wikifier",
 	"description": "Allows a quick look up in the currently browsed wiki/wikia",
-	"version": "0.1",
+	"version": "0.2",
 	"permissions": [
 		"contextMenus",
 		"activeTab"
