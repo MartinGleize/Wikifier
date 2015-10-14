@@ -1,6 +1,6 @@
 {
   "name": "Wikifier",
-  "description": "Allows a quick look up of words in the currently browsed wiki/wikia",
+  "description": "Allows a quick look up in the currently browsed wiki/wikia",
   "version": "0.1",
   "permissions": ["contextMenus"],
   "background": {
