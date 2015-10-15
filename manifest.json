@@ -4,11 +4,16 @@
 	"version": "0.2",
 	"permissions": [
 		"contextMenus",
+		"declarativeContent",
 		"activeTab"
 	],
 	"background": {
 		"persistent": false,
 		"scripts": ["event_page.js"]
+	},
+	"page_action" :
+	{
+		"default_title" : "Select a word in this page and look it up using the context menu"
 	},
 	"manifest_version": 2
 }

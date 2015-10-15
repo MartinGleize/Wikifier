@@ -100,17 +100,30 @@ function onClickHandler(info, tab) {
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
+var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*" ];
+
+var HOST_PARTS = [ ".wikia.com" ];
+
 // set up context menu at install time
 chrome.runtime.onInstalled.addListener(function() {
-  // create a single context menu item that looks up the current selection in the current wiki/wikia
-  var context = "selection";
-  var title = "Look up in current wiki";
-  // only enabled on wikia websites for now
-  var documentUrlPatterns = ["http://*.wikia.com/*"];
-  var id = chrome.contextMenus.create({
-	  "title": title,
-	  "contexts": [context],
-	  "documentUrlPatterns": documentUrlPatterns,
-	  "id": "wikify"
+	// install the rule for displaying the page action
+	chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+		chrome.declarativeContent.onPageChanged.addRules([
+		{
+			conditions: HOST_PARTS.map(function(elt, i, ar){
+				return new chrome.declarativeContent.PageStateMatcher({ pageUrl: { hostContains: elt } });
+			}),
+			actions: [ new chrome.declarativeContent.ShowPageAction() ]
+		}]);
+	});
+	// create a single context menu item that looks up the current selection in the current wiki/wikia
+	var context = "selection";
+	var title = "Look up in current wiki";
+	// only enabled on wikia websites for now
+	var id = chrome.contextMenus.create({
+		"title": title,
+		"contexts": [context],
+		"documentUrlPatterns": DOCUMENT_URL_PATTERNS,
+		"id": "wikify"
 	});
 });
