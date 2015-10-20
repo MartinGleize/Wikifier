@@ -1,7 +1,7 @@
 {
 	"name": "Wikifier",
-	"description": "Allows a quick look up in the currently browsed wiki/wikia",
-	"version": "0.2",
+	"description": "Look up the selected text in the currently browsed wiki",
+	"version": "0.3",
 	"permissions": [
 		"contextMenus",
 		"declarativeContent",
@@ -13,7 +13,7 @@
 	},
 	"page_action" :
 	{
-		"default_title" : "Select a word in this page and look it up using the context menu"
+		"default_title" : "Select text in this page and look it up using the context menu"
 	},
 	"manifest_version": 2
 }

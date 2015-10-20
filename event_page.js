@@ -15,13 +15,22 @@ function resolvedWikiUrl(baseUrl, term) {
     return res;
 }
 
-var WIKIA_SEARCH_PAGE = "Special:Search?search="
+var WIKIA_SEARCH_PAGE = "Special:Search?search=";
+var WIKI_SEARCH_PAGE = "index.php?title=Special%3ASearch&go=Go&search=";
+
+function resolvedWikiSearchUrl(baseUrl, text) {
+	if (baseUrl.includes("wikia")) {
+		return resolvedWikiUrl(baseUrl, WIKIA_SEARCH_PAGE + text);
+	} else {
+		return resolvedWikiUrl(baseUrl, WIKI_SEARCH_PAGE + text);
+	}
+}
 
 function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     // opens a new tab on either the valid wiki page or the search page
     var newTabPosition = parentTabPosition + 1;
     if (doesntExist) {
-        var searchPageUrl = resolvedWikiUrl(url, WIKIA_SEARCH_PAGE + text)
+        var searchPageUrl = resolvedWikiSearchUrl(url, text);
         chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
     } else {
         chrome.tabs.create({index: newTabPosition, "url": url});
@@ -31,8 +40,9 @@ function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
 var NOT_FOUND_STRINGS = [
     "This page needs content.",
     "does not have an article with this exact name",
-    "no results"
-]
+    "no results",
+	"There is currently no text in this page."
+];
 
 function checkForPageExistence(text, message) {
     if (message.url && message.source) {
@@ -100,9 +110,10 @@ function onClickHandler(info, tab) {
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
-var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*" ];
+var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/wiki/*" ];
 
-var HOST_PARTS = [ ".wikia.com" ];
+var HOST_PARTS = [ ".wikia.com", ".wikipedia.org" ];
+var PATH_PARTS = [ "wiki/" ];
 
 // set up context menu at install time
 chrome.runtime.onInstalled.addListener(function() {
@@ -112,13 +123,15 @@ chrome.runtime.onInstalled.addListener(function() {
 		{
 			conditions: HOST_PARTS.map(function(elt, i, ar){
 				return new chrome.declarativeContent.PageStateMatcher({ pageUrl: { hostContains: elt } });
-			}),
+			}).concat(PATH_PARTS.map(function(elt, i, ar){
+				return new chrome.declarativeContent.PageStateMatcher({ pageUrl: { pathContains: elt } });
+			})),
 			actions: [ new chrome.declarativeContent.ShowPageAction() ]
 		}]);
 	});
-	// create a single context menu item that looks up the current selection in the current wiki/wikia
+	// create a single context menu item that looks up the current selection in the current wiki
 	var context = "selection";
-	var title = "Look up in current wiki";
+	var title = "Look up in this wiki";
 	// only enabled on wikia websites for now
 	var id = chrome.contextMenus.create({
 		"title": title,
