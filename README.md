@@ -5,7 +5,7 @@ With this Google Chrome extension, look up the selected text in the currently br
 
 # Download
 
-N/A
+In the "Release" section of the Github. Or just [here](https://github.com/Dergeick/Wikifier/releases/download/v0.3/Wikifier.zip).
 
 # Installation
 
