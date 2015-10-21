@@ -129,13 +129,12 @@ chrome.runtime.onInstalled.addListener(function() {
 			actions: [ new chrome.declarativeContent.ShowPageAction() ]
 		}]);
 	});
-	// create a single context menu item that looks up the current selection in the current wiki
-	var context = "selection";
-	var title = "Look up in this wiki";
+	// create a single context menu item that search the current wiki for the selection
+	var title = "Search this wiki for \"%s\"";
 	// only enabled on wikia websites for now
 	var id = chrome.contextMenus.create({
 		"title": title,
-		"contexts": [context],
+		"contexts": ["selection"],
 		"documentUrlPatterns": DOCUMENT_URL_PATTERNS,
 		"id": "wikify"
 	});
