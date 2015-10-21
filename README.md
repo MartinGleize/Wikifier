@@ -1,5 +1,5 @@
 # Wikifier
-With this Google Chrome extension, search the selected text on the currently browsed wiki.
+With this Google Chrome extension, search the currently browsed wiki for any selected text.
 
 (The name is likely temporary until I find something better.)
 
