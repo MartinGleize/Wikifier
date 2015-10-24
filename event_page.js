@@ -119,6 +119,7 @@ function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 	DISPATCHING LOGIC: whether to navigate to the search url, the direct url, etc..
 ##############################################################################################*/
 
+//TODO: for now, search result processing is disabled
 var SIMPLE_SEARCH = true;
 
 function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
