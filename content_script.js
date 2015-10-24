@@ -1,4 +1,4 @@
-function checkForExistenceInWiki(message, sender, sendResponse) {
+function downloadNextPage(message, sender, sendResponse) {
 	var url = message.url;
 	var extensionId = message.extensionId;
 	var tabPosition = message.tabPosition;
@@ -20,4 +20,4 @@ function checkForExistenceInWiki(message, sender, sendResponse) {
     oReq.send();
 }
 
-chrome.runtime.onMessage.addListener(checkForExistenceInWiki);
+chrome.runtime.onMessage.addListener(downloadNextPage);

@@ -18,6 +18,10 @@ In the "Release" section of the Github. Or just [here](https://github.com/Dergei
 
 N/A
 
+# Features
+
+N/A
+
 # License
 
 MIT License.

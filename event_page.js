@@ -1,5 +1,9 @@
 // License terms for this source code can be found in LICENSE 
 
+/*#############################################################################################
+	UTILS: string functions, url encoding, decoding and resolving, etc...
+##############################################################################################*/
+
 function stringToUrlFormat(s) {
     // replace spaces with underscores
 	var withoutSpace = s.replace(new RegExp(" ", 'g'), "_");
@@ -8,12 +12,32 @@ function stringToUrlFormat(s) {
     return res;
 }
 
+function pageTitle(url) {
+	return url.substring(url.lastIndexOf("/") + 1);
+}
+
+function wikipediaTitleContains(title, text) {
+	var decoded = decodeURI(title);
+	var parts = decoded.split("_");
+	//TODO: decide if === or includes
+	return parts.some(function(p) { return p === text; });
+}
+
 function resolvedWikiUrl(baseUrl, term) {
     var cuttingPoint = baseUrl.lastIndexOf("/");
     var wikiRoot = baseUrl.substring(0, cuttingPoint);
     var res = wikiRoot + "/" + term;
     return res;
 }
+
+function resolvedWikiArticleUrl(baseUrl, rawText) {
+	var wikifiedTitle = stringToUrlFormat(rawText);
+	return resolvedWikiUrl(baseUrl, wikifiedTitle);
+}
+
+/*#############################################################################################
+	SEARCH: search results parsing
+##############################################################################################*/
 
 var WIKIA_SEARCH_PAGE = "Special:Search?search=";
 var WIKI_SEARCH_PAGE = "index.php?title=Special%3ASearch&go=Go&search=";
@@ -26,12 +50,87 @@ function resolvedWikiSearchUrl(baseUrl, text) {
 	}
 }
 
+var SEARCHRESULTS_CLASS_NAMES = [
+	"searchresults",
+	"result"
+];
+var SEARCHRESULTS_LIMIT = 20;
+
+// [B](f: (A) ⇒ [B]): [B]  ; Although the types in the arrays aren't strict (:
+Array.prototype.flatMap = function(lambda) { 
+    return Array.prototype.concat.apply([], this.map(lambda)); 
+};
+
+function allSearchResultsClassStrings() {
+	return SEARCHRESULTS_CLASS_NAMES.flatMap(function(s) { return [ "class='" + s, "class=\"" + s]; });
+}
+
+function getUniqueMatchingSearchResult(text, message) {
+	console.log("Search results were successfully downloaded (" + message.url + ")");
+	// find the start of the search results section
+	var page = message.source;
+	var indices = allSearchResultsClassStrings().map(function(s) { return page.indexOf(s); });
+	var startIndex = indices.find(function(i) { return i >= 0; });
+	if (startIndex === undefined) return null;
+	// extract at most SEARCHRESULTS_LIMIT href links from there on
+	var i = startIndex;
+	var links = [];
+	while (i < page.length && links.length < SEARCHRESULTS_LIMIT) {
+		i = page.indexOf("href=\"", i + 1);
+		if (i < 0) break;
+		i += "href=\"".length;
+		var link = page.substring(i, page.indexOf("\"", i));
+		console.log("Search result extracted: " + link);
+		links.push(link);
+	}
+	if (i < 0) {
+		// no link was found
+		return null;
+	} else {
+		// we check the end of each link for a page whose title contains the selected 'text'
+		var matchingTitles = links.filter(function(l) { return wikipediaTitleContains(pageTitle(l), text); });
+		// remove duplicates
+		matchingTitles = matchingTitles.filter(function(item, pos, a) {
+			return a.indexOf(item) == pos;
+		})
+		// return the unique matching title, or nothing
+		if (matchingTitles.length == 1)
+			return matchingTitles[0];
+		else
+			return null;
+	}
+}
+
+function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
+	if (message.url && message.source) {
+		var matchingLink = getUniqueMatchingSearchResult(text, message);
+		if (matchingLink != null) {
+			// navigate to the unique matching search result
+			//var url = resolvedWikiArticleUrl(searchUrl, text);
+			chrome.tabs.create({ url: matchingLink });
+		} else {
+			// navigate to the search results page
+			chrome.tabs.create({ url: searchUrl });
+		}
+	}
+}
+
+/*#############################################################################################
+	DISPATCHING LOGIC: whether to navigate to the search url, the direct url, etc..
+##############################################################################################*/
+
+var SIMPLE_SEARCH = true;
+
 function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     // opens a new tab on either the valid wiki page or the search page
     var newTabPosition = parentTabPosition + 1;
     if (doesntExist) {
         var searchPageUrl = resolvedWikiSearchUrl(url, text);
-        chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
+        if (SIMPLE_SEARCH) {
+			chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
+		} else {
+			downloadPage(text, searchPageUrl, checkForUniqueMatchingSearchResult);
+		}
     } else {
         chrome.tabs.create({index: newTabPosition, "url": url});
     }
@@ -44,22 +143,27 @@ var NOT_FOUND_STRINGS = [
 	"There is currently no text in this page."
 ];
 
-function checkForPageExistence(text, message) {
+function checkForPageExistence(text, downloadedUrl, message) {
     if (message.url && message.source) {
       console.log("Tentative page was successfully downloaded (" + message.url + ")");
       // look for every notfound-type strings in the source of the page
-      var doesntExist = NOT_FOUND_STRINGS.findIndex(function(elt, i, ar) { return message.source.includes(elt); }) >= 0;
-      navigateToFinalPage(text, message.url, doesntExist, message.tabPosition)
+      var doesntExist = NOT_FOUND_STRINGS.some(function(elt, i, ar) { return message.source.includes(elt); });
+      navigateToFinalPage(text, message.url, doesntExist, message.tabPosition);
     }
 }
 
-function downloadPage(text, url) {
+/*#############################################################################################
+	BACKGROUND DOWNLOADING: downloads pages in the background and check them for patterns
+##############################################################################################*/
+
+function downloadPage(text, url, callback) {
     // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
-    // handle the response: we then check for the existence of this page on the wiki
+    // handle the response
     function handleResponse(message, sender, sendResponse) {
         //TOCHECK: necessary to remove the listener once the message has been fired, otherwise several pages open...
         chrome.runtime.onMessage.removeListener(handleResponse);
-        checkForPageExistence(text, message)
+		// here, callback when the download of the next page is complete
+        callback(text, url, message);
     }
     chrome.runtime.onMessage.addListener(handleResponse);
     // on current tab
@@ -70,10 +174,10 @@ function downloadPage(text, url) {
             var currentTab = tabArray[0];
             var tabId = currentTab.id;
             var tabPosition = currentTab.index;
-            // check for page existence via content script
+            // download page via content script
             chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
                 console.log("Injecting content_script.js in page " + currentTab.url);
-                // send message containing the url to the content script
+                // send message containing the target url to the content script
                 var message = {
                     "url": url,
                     "extensionId": chrome.runtime.id,
@@ -87,8 +191,12 @@ function downloadPage(text, url) {
 
 function navigateToTentativeWikiPage(text, url) {
     // start with checking the page for existence
-    downloadPage(text, url);
+    downloadPage(text, url, checkForPageExistence);
 }
+
+/*#############################################################################################
+	CHROME EXTENSION CORE
+##############################################################################################*/
 
 // the onClicked callback function:
 function onClickHandler(info, tab) {
