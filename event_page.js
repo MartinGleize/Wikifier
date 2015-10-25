@@ -17,10 +17,11 @@ function pageTitle(url) {
 }
 
 function wikipediaTitleContains(title, text) {
-	var decoded = decodeURI(title);
-	var parts = decoded.split("_");
+	var decodedTitle = decodeURI(title);
+	var partsTitle = decodedTitle.split("_");
+	var partsText = text.split(" ");
 	//TODO: decide if === or includes
-	return parts.some(function(p) { return p === text; });
+	return partsText.every(function(t) { return partsTitle.some(function(p) { return p === t; }); });
 }
 
 function resolvedWikiUrl(baseUrl, term) {
@@ -120,7 +121,7 @@ function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 ##############################################################################################*/
 
 //TODO: for now, search result processing is disabled
-var SIMPLE_SEARCH = true;
+var SIMPLE_SEARCH = false;
 
 function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     // opens a new tab on either the valid wiki page or the search page
