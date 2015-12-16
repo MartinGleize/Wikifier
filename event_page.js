@@ -90,6 +90,7 @@ function getUniqueMatchingSearchResult(text, message) {
 	} else {
 		// we check the end of each link for a page whose title contains the selected 'text'
 		var matchingTitles = links.filter(function(l) { return wikipediaTitleContains(pageTitle(l), text); });
+		//TODO: remove trailing "/" suffixes (these are usually wiki subpages)
 		// remove duplicates
 		matchingTitles = matchingTitles.filter(function(item, pos, a) {
 			return a.indexOf(item) == pos;
@@ -142,7 +143,8 @@ var NOT_FOUND_STRINGS = [
     "This page needs content.",
     "does not have an article with this exact name",
     "no results",
-	"There is currently no text in this page."
+	"There is currently no text in this page.",
+	"This page has been deleted."
 ];
 
 function checkForPageExistence(text, downloadedUrl, message) {
