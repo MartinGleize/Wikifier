@@ -222,10 +222,10 @@ function onClickHandler(info, tab) {
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
-var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/wiki/*" ];
+var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/*wiki*", "*://*/*Wiki*" ];
 
 var HOST_PARTS = [ ".wikia.com", ".wikipedia.org" ];
-var PATH_PARTS = [ "wiki/" ];
+var PATH_PARTS = [ "wiki/", "wiki", "Wiki" ];
 
 // set up context menu at install time
 chrome.runtime.onInstalled.addListener(function() {

@@ -1,7 +1,7 @@
 {
 	"name": "Wikifier",
 	"description": "Search the currently browsed wiki for any selected text",
-	"version": "0.5",
+	"version": "0.5.1",
 	"permissions": [
 		"contextMenus",
 		"declarativeContent",
