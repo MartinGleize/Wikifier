@@ -165,13 +165,13 @@ function downloadPage(text, url, callback) {
     // handle the response
     function handleResponse(message, sender, sendResponse) {
         //TOCHECK: necessary to remove the listener once the message has been fired, otherwise several pages open...
-        chrome.runtime.onMessage.removeListener(handleResponse);
+        runtime.onMessage.removeListener(handleResponse);
 		// here, callback when the download of the next page is complete
         callback(text, url, message);
     }
-    chrome.runtime.onMessage.addListener(handleResponse);
+    runtime.onMessage.addListener(handleResponse);
     // on current tab
-    chrome.tabs.query(
+    tabs.query(
         {currentWindow: true, active : true},
         function(tabArray){
             // get current tab id
@@ -220,7 +220,7 @@ function onClickHandler(info, tab) {
 	}
 };
 
-chrome.contextMenus.onClicked.addListener(onClickHandler);
+contextMenus.onClicked.addListener(onClickHandler);
 
 var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/*wiki*", "*://*/*Wiki*" ];
 
@@ -228,7 +228,7 @@ var HOST_PARTS = [ ".wikia.com", ".wikipedia.org" ];
 var PATH_PARTS = [ "wiki/", "wiki", "Wiki" ];
 
 // set up context menu at install time
-chrome.runtime.onInstalled.addListener(function() {
+runtime.onInstalled.addListener(function() {
 	// install the rule for displaying the page action
 	chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
 		chrome.declarativeContent.onPageChanged.addRules([
@@ -244,7 +244,7 @@ chrome.runtime.onInstalled.addListener(function() {
 	// create a single context menu item that search the current wiki for the selection
 	var title = "Search this wiki for \"%s\"";
 	// only enabled on wikia websites for now
-	var id = chrome.contextMenus.create({
+	var id = contextMenus.create({
 		"title": title,
 		"contexts": ["selection"],
 		"documentUrlPatterns": DOCUMENT_URL_PATTERNS,

@@ -10,7 +10,7 @@ function downloadNextPage(message, sender, sendResponse) {
         console.log("Downloaded " + url);
 		console.log("Extension ID: " + extensionId);
         // send back to the extension the source of the downloaded page
-		chrome.runtime.sendMessage(extensionId, {"url": url, "source": this.responseText, "tabPosition": tabPosition});
+		runtime.sendMessage(extensionId, {"url": url, "source": this.responseText, "tabPosition": tabPosition});
     }
 
 	// download the tentative page
@@ -20,4 +20,4 @@ function downloadNextPage(message, sender, sendResponse) {
     oReq.send();
 }
 
-chrome.runtime.onMessage.addListener(downloadNextPage);
+runtime.onMessage.addListener(downloadNextPage);
