@@ -109,10 +109,10 @@ function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 		if (matchingLink != null) {
 			// navigate to the unique matching search result
 			//var url = resolvedWikiArticleUrl(searchUrl, text);
-			chrome.tabs.create({ url: matchingLink });
+			tabs.create({ url: matchingLink });
 		} else {
 			// navigate to the search results page
-			chrome.tabs.create({ url: searchUrl });
+			tabs.create({ url: searchUrl });
 		}
 	}
 }
@@ -130,12 +130,12 @@ function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     if (doesntExist) {
         var searchPageUrl = resolvedWikiSearchUrl(url, text);
         if (SIMPLE_SEARCH) {
-			chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
+			tabs.create({index: newTabPosition, url: searchPageUrl});
 		} else {
 			downloadPage(text, searchPageUrl, checkForUniqueMatchingSearchResult);
 		}
     } else {
-        chrome.tabs.create({index: newTabPosition, "url": url});
+        tabs.create({index: newTabPosition, "url": url});
     }
 }
 
@@ -179,15 +179,15 @@ function downloadPage(text, url, callback) {
             var tabId = currentTab.id;
             var tabPosition = currentTab.index;
             // download page via content script
-            chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
+            tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
                 console.log("Injecting content_script.js in page " + currentTab.url);
                 // send message containing the target url to the content script
                 var message = {
                     "url": url,
-                    "extensionId": chrome.runtime.id,
+                    "extensionId": runtime.id,
                     "tabPosition": tabPosition
                 }
-                chrome.tabs.sendMessage(tabId, message);
+                tabs.sendMessage(tabId, message);
             });
         }
     );
