@@ -10,7 +10,7 @@
 	],
 	"background": {
 		"persistent": false,
-		"scripts": ["event_page.js"]
+		"scripts": ["event_page_simple.js"]
 	},
 	"page_action" :
 	{
