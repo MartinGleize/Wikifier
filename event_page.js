@@ -1,8 +1,9 @@
+/*
 // License terms for this source code can be found in LICENSE 
 
-/*#############################################################################################
-	UTILS: string functions, url encoding, decoding and resolving, etc...
-##############################################################################################*/
+//#############################################################################################
+//	UTILS: string functions, url encoding, decoding and resolving, etc...
+//##############################################################################################
 
 function stringToUrlFormat(s) {
     // replace spaces with underscores
@@ -36,9 +37,9 @@ function resolvedWikiArticleUrl(baseUrl, rawText) {
 	return resolvedWikiUrl(baseUrl, wikifiedTitle);
 }
 
-/*#############################################################################################
-	SEARCH: search results parsing
-##############################################################################################*/
+//#############################################################################################
+//	SEARCH: search results parsing
+//#############################################################################################
 
 var WIKIA_SEARCH_PAGE = "Special:Search?search=";
 var WIKI_SEARCH_PAGE = "index.php?title=Special%3ASearch&go=Go&search=";
@@ -109,17 +110,17 @@ function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 		if (matchingLink != null) {
 			// navigate to the unique matching search result
 			//var url = resolvedWikiArticleUrl(searchUrl, text);
-			tabs.create({ url: matchingLink });
+			browser.tabs.create({ url: matchingLink });
 		} else {
 			// navigate to the search results page
-			tabs.create({ url: searchUrl });
+			browser.tabs.create({ url: searchUrl });
 		}
 	}
 }
 
-/*#############################################################################################
-	DISPATCHING LOGIC: whether to navigate to the search url, the direct url, etc..
-##############################################################################################*/
+//############################################################################################
+//	DISPATCHING LOGIC: whether to navigate to the search url, the direct url, etc..
+//############################################################################################
 
 //TODO: for now, search result processing is disabled
 var SIMPLE_SEARCH = false;
@@ -130,12 +131,12 @@ function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     if (doesntExist) {
         var searchPageUrl = resolvedWikiSearchUrl(url, text);
         if (SIMPLE_SEARCH) {
-			tabs.create({index: newTabPosition, url: searchPageUrl});
+			browser.tabs.create({index: newTabPosition, url: searchPageUrl});
 		} else {
 			downloadPage(text, searchPageUrl, checkForUniqueMatchingSearchResult);
 		}
     } else {
-        tabs.create({index: newTabPosition, "url": url});
+        browser.tabs.create({index: newTabPosition, "url": url});
     }
 }
 
@@ -156,22 +157,22 @@ function checkForPageExistence(text, downloadedUrl, message) {
     }
 }
 
-/*#############################################################################################
-	BACKGROUND DOWNLOADING: downloads pages in the background and check them for patterns
-##############################################################################################*/
+//############################################################################################
+//	BACKGROUND DOWNLOADING: downloads pages in the background and check them for patterns
+//############################################################################################
 
 function downloadPage(text, url, callback) {
     // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
     // handle the response
     function handleResponse(message, sender, sendResponse) {
         //TOCHECK: necessary to remove the listener once the message has been fired, otherwise several pages open...
-        runtime.onMessage.removeListener(handleResponse);
+        browser.runtime.onMessage.removeListener(handleResponse);
 		// here, callback when the download of the next page is complete
         callback(text, url, message);
     }
-    runtime.onMessage.addListener(handleResponse);
+    browser.runtime.onMessage.addListener(handleResponse);
     // on current tab
-    tabs.query(
+    browser.tabs.query(
         {currentWindow: true, active : true},
         function(tabArray){
             // get current tab id
@@ -179,7 +180,7 @@ function downloadPage(text, url, callback) {
             var tabId = currentTab.id;
             var tabPosition = currentTab.index;
             // download page via content script
-            tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
+            browser.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
                 console.log("Injecting content_script.js in page " + currentTab.url);
                 // send message containing the target url to the content script
                 var message = {
@@ -187,7 +188,7 @@ function downloadPage(text, url, callback) {
                     "extensionId": runtime.id,
                     "tabPosition": tabPosition
                 }
-                tabs.sendMessage(tabId, message);
+                browser.tabs.sendMessage(tabId, message);
             });
         }
     );
@@ -198,9 +199,9 @@ function navigateToTentativeWikiPage(text, url) {
     downloadPage(text, url, checkForPageExistence);
 }
 
-/*#############################################################################################
-	CHROME EXTENSION CORE
-##############################################################################################*/
+//#############################################################################################
+//	CHROME EXTENSION CORE
+//#############################################################################################
 
 // the onClicked callback function:
 function onClickHandler(info, tab) {
@@ -220,7 +221,10 @@ function onClickHandler(info, tab) {
 	}
 };
 
-contextMenus.onClicked.addListener(onClickHandler);
+
+browser.contextMenus.onClicked.addListener(onClickHandler);
+
+*/
 
 var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/*wiki*", "*://*/*Wiki*" ];
 
@@ -228,7 +232,7 @@ var HOST_PARTS = [ ".wikia.com", ".wikipedia.org" ];
 var PATH_PARTS = [ "wiki/", "wiki", "Wiki" ];
 
 // set up context menu at install time
-runtime.onInstalled.addListener(function() {
+browser.runtime.onInstalled.addListener(function() {
 	// install the rule for displaying the page action
 	chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
 		chrome.declarativeContent.onPageChanged.addRules([
@@ -243,8 +247,7 @@ runtime.onInstalled.addListener(function() {
 	});
 	// create a single context menu item that search the current wiki for the selection
 	var title = "Search this wiki for \"%s\"";
-	// only enabled on wikia websites for now
-	var id = contextMenus.create({
+	browser.contextMenus.create({
 		"title": title,
 		"contexts": ["selection"],
 		"documentUrlPatterns": DOCUMENT_URL_PATTERNS,
