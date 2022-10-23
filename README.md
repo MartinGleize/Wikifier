@@ -1,26 +1,27 @@
 # Wikifier
 With this Google Chrome extension, search the currently browsed wiki for any selected text.
 
-(The name is likely temporary until I find something better.)
+Install it directly from the Chrome Web Store:
 
-# Download
-
-In the "Release" section of the Github. Or just [here](https://github.com/Dergeick/Wikifier/releases/download/v0.3/Wikifier.zip).
-
-# Installation
-
-1. Download and extract the Wikifier folder.
-2. Open Google Chrome.
-3. Type "chrome://extensions" in the URL bar.
-4. Click on "Load unpacked extension..." and target the Wikifier folder.
+https://chrome.google.com/webstore/detail/wikifier/halpmadjihbhgidkaiikhieggmhjhnac
 
 # Using Wikifier
 
-N/A
+On supported sites (wikipedia.org, wikia.com, fandom.com), just highlight text you want to search, right-click (this opens the context menu) and click on "Search this wiki for [your selection]".
 
-# Features
+# For developers and advanced users
 
-N/A
+## Download (unpacked)
+
+For unpacked loading, the simplest is to clone or to download the ZIP file of the repository.
+
+## Installation (unpacked)
+
+1. Download and extract the Wikifier folder.
+1. Open Google Chrome.
+1. Type "chrome://extensions" in the URL bar.
+1. Enable "Developer mode" in the top right.
+1. Click on "Load unpacked" and target the Wikifier folder.
 
 # License
 
