@@ -1,19 +1,20 @@
 {
 	"name": "Wikifier",
 	"description": "Search the currently browsed wiki for any selected text",
-	"version": "0.5.1",
+	"version": "0.5.2",
 	"permissions": [
 		"contextMenus",
 		"declarativeContent",
-		"activeTab"
+		"activeTab",
+		"scripting"
 	],
 	"background": {
-		"persistent": false,
-		"scripts": ["event_page.js"]
+		"service_worker": "background.js",
+		"type": "module"
 	},
-	"page_action" :
+	"action" :
 	{
 		"default_title" : "Select text in this page and search using the context menu"
 	},
-	"manifest_version": 2
+	"manifest_version": 3
 }

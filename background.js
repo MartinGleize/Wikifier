@@ -40,22 +40,29 @@ function resolvedWikiArticleUrl(baseUrl, rawText) {
 	SEARCH: search results parsing
 ##############################################################################################*/
 
-var WIKIA_SEARCH_PAGE = "Special:Search?search=";
-var WIKI_SEARCH_PAGE = "index.php?title=Special%3ASearch&go=Go&search=";
+const WIKIA_SEARCH_PAGE = "Special:Search?search=";
+const WIKI_SEARCH_PAGE = "index.php?title=Special%3ASearch&go=Go&search=";
+
+const WIKIA_SEARCH_URL_CONTAIN_CONDITIONS = [
+	"wikia",
+	".fandom.com"
+];
 
 function resolvedWikiSearchUrl(baseUrl, text) {
-	if (baseUrl.includes("wikia")) {
+	if (WIKIA_SEARCH_URL_CONTAIN_CONDITIONS.some(pt => baseUrl.includes(pt))) {
 		return resolvedWikiUrl(baseUrl, WIKIA_SEARCH_PAGE + text);
 	} else {
+		// Wikipedia changes "/wiki/" to "/w/" on searches
+		baseUrl = baseUrl.replace("/wiki/", "/w/");
 		return resolvedWikiUrl(baseUrl, WIKI_SEARCH_PAGE + text);
 	}
 }
 
-var SEARCHRESULTS_CLASS_NAMES = [
+const SEARCHRESULTS_CLASS_NAMES = [
 	"searchresults",
 	"result"
 ];
-var SEARCHRESULTS_LIMIT = 20;
+const SEARCHRESULTS_LIMIT = 20;
 
 // [B](f: (A) ⇒ [B]): [B]  ; Although the types in the arrays aren't strict (:
 Array.prototype.flatMap = function(lambda) { 
@@ -63,15 +70,15 @@ Array.prototype.flatMap = function(lambda) {
 };
 
 function allSearchResultsClassStrings() {
-	return SEARCHRESULTS_CLASS_NAMES.flatMap(function(s) { return [ "class='" + s, "class=\"" + s]; });
+	return SEARCHRESULTS_CLASS_NAMES.flatMap(s => [ "class='" + s, "class=\"" + s]);
 }
 
 function getUniqueMatchingSearchResult(text, message) {
 	console.log("Search results were successfully downloaded (" + message.url + ")");
 	// find the start of the search results section
 	var page = message.source;
-	var indices = allSearchResultsClassStrings().map(function(s) { return page.indexOf(s); });
-	var startIndex = indices.find(function(i) { return i >= 0; });
+	var indices = allSearchResultsClassStrings().map(s => page.indexOf(s));
+	var startIndex = indices.find(i => i >= 0);
 	if (startIndex === undefined) return null;
 	// extract at most SEARCHRESULTS_LIMIT href links from there on
 	var i = startIndex;
@@ -80,7 +87,7 @@ function getUniqueMatchingSearchResult(text, message) {
 		i = page.indexOf("href=\"", i + 1);
 		if (i < 0) break;
 		i += "href=\"".length;
-		var link = page.substring(i, page.indexOf("\"", i));
+		let link = page.substring(i, page.indexOf("\"", i));
 		console.log("Search result extracted: " + link);
 		links.push(link);
 	}
@@ -103,16 +110,17 @@ function getUniqueMatchingSearchResult(text, message) {
 	}
 }
 
-function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
+async function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 	if (message.url && message.source) {
-		var matchingLink = getUniqueMatchingSearchResult(text, message);
+		let tab = await getCurrentTab();
+		let matchingLink = getUniqueMatchingSearchResult(text, message);
 		if (matchingLink != null) {
 			// navigate to the unique matching search result
 			//var url = resolvedWikiArticleUrl(searchUrl, text);
-			chrome.tabs.create({ url: matchingLink });
+			chrome.tabs.create({ url: matchingLink, index: tab.index + 1 });
 		} else {
 			// navigate to the search results page
-			chrome.tabs.create({ url: searchUrl });
+			chrome.tabs.create({ url: searchUrl, index: tab.index + 1 });
 		}
 	}
 }
@@ -121,8 +129,8 @@ function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 	DISPATCHING LOGIC: whether to navigate to the search url, the direct url, etc..
 ##############################################################################################*/
 
-//TODO: for now, search result processing is disabled
-var SIMPLE_SEARCH = false;
+// switch this to true to disable search result processing
+const SIMPLE_SEARCH = false;
 
 function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
     // opens a new tab on either the valid wiki page or the search page
@@ -142,6 +150,7 @@ function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
 var NOT_FOUND_STRINGS = [
     "This page needs content.",
     "does not have an article with this exact name",
+	"does not yet have a page with this exact name",
     "no results",
 	"There is currently no text in this page.",
 	"This page has been deleted."
@@ -151,7 +160,7 @@ function checkForPageExistence(text, downloadedUrl, message) {
     if (message.url && message.source) {
       console.log("Tentative page was successfully downloaded (" + message.url + ")");
       // look for every notfound-type strings in the source of the page
-      var doesntExist = NOT_FOUND_STRINGS.some(function(elt, i, ar) { return message.source.includes(elt); });
+      let doesntExist = NOT_FOUND_STRINGS.some(function(elt, i, ar) { return message.source.includes(elt); });
       navigateToFinalPage(text, message.url, doesntExist, message.tabPosition);
     }
 }
@@ -160,7 +169,15 @@ function checkForPageExistence(text, downloadedUrl, message) {
 	BACKGROUND DOWNLOADING: downloads pages in the background and check them for patterns
 ##############################################################################################*/
 
-function downloadPage(text, url, callback) {
+/** Taken from https://developer.chrome.com/docs/extensions/reference/tabs/ */
+async function getCurrentTab() {
+	let queryOptions = { active: true, lastFocusedWindow: true };
+	// `tab` will either be a `tabs.Tab` instance or `undefined`.
+	let [tab] = await chrome.tabs.query(queryOptions);
+	return tab;
+}
+
+async function downloadPage(text, url, callback) {
     // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
     // handle the response
     function handleResponse(message, sender, sendResponse) {
@@ -171,26 +188,23 @@ function downloadPage(text, url, callback) {
     }
     chrome.runtime.onMessage.addListener(handleResponse);
     // on current tab
-    chrome.tabs.query(
-        {currentWindow: true, active : true},
-        function(tabArray){
-            // get current tab id
-            var currentTab = tabArray[0];
-            var tabId = currentTab.id;
-            var tabPosition = currentTab.index;
-            // download page via content script
-            chrome.tabs.executeScript(tabId, {file: 'content_script.js'}, function() {
-                console.log("Injecting content_script.js in page " + currentTab.url);
-                // send message containing the target url to the content script
-                var message = {
-                    "url": url,
-                    "extensionId": chrome.runtime.id,
-                    "tabPosition": tabPosition
-                }
-                chrome.tabs.sendMessage(tabId, message);
-            });
-        }
-    );
+	let tab = await getCurrentTab();
+	chrome.scripting.executeScript(
+		{
+			target: {tabId: tab.id},
+			files: ['content_script.js'],
+		},
+		() => {
+			console.log("Injecting content_script.js in page " + tab.url);
+			// send message containing the target url to the content script
+			var message = {
+				"url": url,
+				"extensionId": chrome.runtime.id,
+				"tabPosition": tab.index
+			}
+			chrome.tabs.sendMessage(tab.id, message);
+		}
+	);
 }
 
 function navigateToTentativeWikiPage(text, url) {
@@ -222,9 +236,19 @@ function onClickHandler(info, tab) {
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
-var DOCUMENT_URL_PATTERNS = [ "http://*.wikia.com/*", "*://*/*wiki*", "*://*/*Wiki*" ];
+var DOCUMENT_URL_PATTERNS = [
+	"*://*.wikipedia.org/*",
+	"*://*.wikia.com/*",
+	"*://*.fandom.com/*",
+	"*://*/*wiki*",
+	"*://*/*Wiki*"
+];
 
-var HOST_PARTS = [ ".wikia.com", ".wikipedia.org" ];
+var HOST_PARTS = [
+	".wikipedia.org",
+	".wikia.com",
+	".fandom.com"
+];
 var PATH_PARTS = [ "wiki/", "wiki", "Wiki" ];
 
 // set up context menu at install time
