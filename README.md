@@ -1,5 +1,5 @@
 # Wikifier
-With this Chrome/Firefox extension, search the currently browsed wiki for any selected text.
+With this browser extension, search the currently browsed wiki for any selected text. Compatible with Chrome, Firefox, and Edge.
 
 If your selected text has an exact page on the wiki, the Wikifier brings you directly to it. This is very convenient, since every interesting term on a page is not necessarily "wikilinked" (even when it might have a relevant page).
 
@@ -10,6 +10,10 @@ If your selected text has an exact page on the wiki, the Wikifier brings you dir
 https://chrome.google.com/webstore/detail/wikifier/halpmadjihbhgidkaiikhieggmhjhnac
 
 * From the Firefox Add-ons:
+
+[coming]
+
+* From the Microsoft Edge Add-ons:
 
 [coming]
 
@@ -39,6 +43,15 @@ For unpacked loading, the simplest is to clone or to download the ZIP file of th
 1. Open Mozilla Firefox.
 1. Type `"about:debugging#/runtime/this-firefox"` in the URL bar.
 1. Click on "Load Temporary Add-on..." and target the Wikifier folder.
+
+## Installation on Edge (unpacked)
+
+1. Download and extract the Wikifier folder.
+1. Copy `"manifest_chrome.json"` to `"manifest.json"`.
+1. Open Microsoft Edge.
+1. Type `"edge://extensions/"` in the URL bar.
+1. Enable "Developer mode" in the bottom left.
+1. Click on "Load unpacked" and target the Wikifier folder.
 
 # License
 
