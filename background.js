@@ -5,10 +5,12 @@
 ##############################################################################################*/
 
 function stringToUrlFormat(s) {
+	// trim first
+	var res = s.trim()
     // replace spaces with underscores
-	var withoutSpace = s.replace(new RegExp(" ", 'g'), "_");
+	res = res.replace(new RegExp(" ", 'g'), "_");
     // encode the rest of the special characters
-    var res = encodeURI(withoutSpace);
+    res = encodeURI(res);
     return res;
 }
 
@@ -110,9 +112,8 @@ function getUniqueMatchingSearchResult(text, message) {
 	}
 }
 
-async function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
+function checkForUniqueMatchingSearchResult(text, searchUrl, tab, message) {
 	if (message.url && message.source) {
-		let tab = await getCurrentTab();
 		let matchingLink = getUniqueMatchingSearchResult(text, message);
 		if (matchingLink != null) {
 			// navigate to the unique matching search result
@@ -132,15 +133,15 @@ async function checkForUniqueMatchingSearchResult(text, searchUrl, message) {
 // switch this to true to disable search result processing
 const SIMPLE_SEARCH = false;
 
-function navigateToFinalPage(text, url, doesntExist, parentTabPosition) {
+function navigateToFinalPage(text, url, doesntExist, currentTab) {
     // opens a new tab on either the valid wiki page or the search page
-    var newTabPosition = parentTabPosition + 1;
+    var newTabPosition = currentTab.index + 1;
     if (doesntExist) {
         var searchPageUrl = resolvedWikiSearchUrl(url, text);
         if (SIMPLE_SEARCH) {
 			chrome.tabs.create({index: newTabPosition, url: searchPageUrl});
 		} else {
-			downloadPage(text, searchPageUrl, checkForUniqueMatchingSearchResult);
+			downloadPage(text, searchPageUrl, currentTab, checkForUniqueMatchingSearchResult);
 		}
     } else {
         chrome.tabs.create({index: newTabPosition, "url": url});
@@ -156,12 +157,12 @@ var NOT_FOUND_STRINGS = [
 	"This page has been deleted."
 ];
 
-function checkForPageExistence(text, downloadedUrl, message) {
+function checkForPageExistence(text, downloadedUrl, tab, message) {
     if (message.url && message.source) {
       console.log("Tentative page was successfully downloaded (" + message.url + ")");
       // look for every notfound-type strings in the source of the page
       let doesntExist = NOT_FOUND_STRINGS.some(function(elt, i, ar) { return message.source.includes(elt); });
-      navigateToFinalPage(text, message.url, doesntExist, message.tabPosition);
+      navigateToFinalPage(text, message.url, doesntExist, tab);
     }
 }
 
@@ -169,33 +170,24 @@ function checkForPageExistence(text, downloadedUrl, message) {
 	BACKGROUND DOWNLOADING: downloads pages in the background and check them for patterns
 ##############################################################################################*/
 
-/** Taken from https://developer.chrome.com/docs/extensions/reference/tabs/ */
-async function getCurrentTab() {
-	let queryOptions = { active: true, lastFocusedWindow: true };
-	// `tab` will either be a `tabs.Tab` instance or `undefined`.
-	let [tab] = await chrome.tabs.query(queryOptions);
-	return tab;
-}
-
-async function downloadPage(text, url, callback) {
+function downloadPage(text, url, tab, callback) {
     // this is done through the injection of "content_script.js" to allow an on-site XMLHttpRequest use
     // handle the response
     function handleResponse(message, sender, sendResponse) {
         //TOCHECK: necessary to remove the listener once the message has been fired, otherwise several pages open...
         chrome.runtime.onMessage.removeListener(handleResponse);
 		// here, callback when the download of the next page is complete
-        callback(text, url, message);
+        callback(text, url, tab, message);
     }
     chrome.runtime.onMessage.addListener(handleResponse);
     // on current tab
-	let tab = await getCurrentTab();
 	chrome.scripting.executeScript(
 		{
 			target: {tabId: tab.id},
 			files: ['content_script.js'],
 		},
 		() => {
-			console.log("Injecting content_script.js in page " + tab.url);
+			console.log("Injecting content_script.js on tab at index" + tab.index);
 			// send message containing the target url to the content script
 			var message = {
 				"url": url,
@@ -207,9 +199,9 @@ async function downloadPage(text, url, callback) {
 	);
 }
 
-function navigateToTentativeWikiPage(text, url) {
+function navigateToTentativeWikiPage(text, url, currentTab) {
     // start with checking the page for existence
-    downloadPage(text, url, checkForPageExistence);
+    downloadPage(text, url, currentTab, checkForPageExistence);
 }
 
 /*#############################################################################################
@@ -230,13 +222,13 @@ function onClickHandler(info, tab) {
         var newUrl = resolvedWikiUrl(url, term);
         console.log("New url: " + newUrl);
         // navigate to tentative wiki page (or search for it)
-        navigateToTentativeWikiPage(text, newUrl);
+        navigateToTentativeWikiPage(text, newUrl, tab);
 	}
 };
 
 chrome.contextMenus.onClicked.addListener(onClickHandler);
 
-var DOCUMENT_URL_PATTERNS = [
+const DOCUMENT_URL_PATTERNS = [
 	"*://*.wikipedia.org/*",
 	"*://*.wikia.com/*",
 	"*://*.fandom.com/*",
@@ -244,27 +236,8 @@ var DOCUMENT_URL_PATTERNS = [
 	"*://*/*Wiki*"
 ];
 
-var HOST_PARTS = [
-	".wikipedia.org",
-	".wikia.com",
-	".fandom.com"
-];
-var PATH_PARTS = [ "wiki/", "wiki", "Wiki" ];
-
 // set up context menu at install time
 chrome.runtime.onInstalled.addListener(function() {
-	// install the rule for displaying the page action
-	chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-		chrome.declarativeContent.onPageChanged.addRules([
-		{
-			conditions: HOST_PARTS.map(function(elt, i, ar){
-				return new chrome.declarativeContent.PageStateMatcher({ pageUrl: { hostContains: elt } });
-			}).concat(PATH_PARTS.map(function(elt, i, ar){
-				return new chrome.declarativeContent.PageStateMatcher({ pageUrl: { pathContains: elt } });
-			})),
-			actions: [ new chrome.declarativeContent.ShowPageAction() ]
-		}]);
-	});
 	// create a single context menu item that search the current wiki for the selection
 	var title = "Search this wiki for \"%s\"";
 	// only enabled on wikia websites for now
