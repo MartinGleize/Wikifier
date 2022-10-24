@@ -11,9 +11,5 @@
 		"service_worker": "background.js",
 		"type": "module"
 	},
-	"action" :
-	{
-		"default_title" : "Select text in this page and search using the context menu"
-	},
 	"manifest_version": 3
 }
