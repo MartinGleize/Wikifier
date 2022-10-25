@@ -1,9 +1,21 @@
 # Wikifier
-With this Google Chrome extension, search the currently browsed wiki for any selected text.
+With this browser extension, search the currently browsed wiki for any selected text. Compatible with Chrome, Firefox, and Edge.
 
-Install it directly from the Chrome Web Store:
+If your selected text has an exact page on the wiki, the Wikifier brings you directly to it. This is very convenient, since every interesting term on a page is not necessarily "wikilinked" (even when it might have a relevant page).
+
+# Installation
+
+* From the Chrome Web Store:
 
 https://chrome.google.com/webstore/detail/wikifier/halpmadjihbhgidkaiikhieggmhjhnac
+
+* From the Firefox Add-ons:
+
+[coming]
+
+* From the Microsoft Edge Add-ons:
+
+[coming]
 
 # Using Wikifier
 
@@ -15,12 +27,30 @@ On supported sites (wikipedia.org, wikia.com, fandom.com), just highlight text y
 
 For unpacked loading, the simplest is to clone or to download the ZIP file of the repository.
 
-## Installation (unpacked)
+## Installation on Chrome (unpacked)
 
 1. Download and extract the Wikifier folder.
+1. Copy `"manifest_chrome.json"` to `"manifest.json"`.
 1. Open Google Chrome.
-1. Type "chrome://extensions" in the URL bar.
+1. Type `"chrome://extensions"` in the URL bar.
 1. Enable "Developer mode" in the top right.
+1. Click on "Load unpacked" and target the Wikifier folder.
+
+## Installation on Firefox (unpacked)
+
+1. Download and extract the Wikifier folder.
+1. Copy `"manifest_firefox.json"` to `"manifest.json"`.
+1. Open Mozilla Firefox.
+1. Type `"about:debugging#/runtime/this-firefox"` in the URL bar.
+1. Click on "Load Temporary Add-on..." and target the Wikifier folder.
+
+## Installation on Edge (unpacked)
+
+1. Download and extract the Wikifier folder.
+1. Copy `"manifest_chrome.json"` to `"manifest.json"`.
+1. Open Microsoft Edge.
+1. Type `"edge://extensions/"` in the URL bar.
+1. Enable "Developer mode" in the bottom left.
 1. Click on "Load unpacked" and target the Wikifier folder.
 
 # License

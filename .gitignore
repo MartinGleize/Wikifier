@@ -1,0 +1,3 @@
+# manifest.json is always ignored since we only care about browser-specific manifests
+# those are named "manifest_[browser].json"
+manifest.json
