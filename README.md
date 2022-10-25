@@ -11,7 +11,7 @@ https://chrome.google.com/webstore/detail/wikifier/halpmadjihbhgidkaiikhieggmhjh
 
 * From the Firefox Add-ons:
 
-[coming]
+https://addons.mozilla.org/en-US/firefox/addon/wikifier/
 
 * From the Microsoft Edge Add-ons:
 
